@@ -54,6 +54,8 @@ create table if not exists shuangcodeapi.`interface_info`
     `name` varchar(256) not null comment '接口名称',
     `description` varchar(256) null comment '描述',
     `url` varchar(512) not null comment '接口地址',
+    `requestParams` text not null comment '请求参数',
+
     `method` varchar(256) not null comment '请求类型',
     `requestHeader` text null comment '请求头',
     `respondsHeader` text null comment '响应头',

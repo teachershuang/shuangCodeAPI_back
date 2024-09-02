@@ -43,6 +43,11 @@ public class InterfaceInfoAddRequest implements Serializable {
      */
     private String respondsHeader;
 
+    /**
+     * 请求参数
+     */
+    private String requestParams;
+
 
     @TableField(exist = false)
     private static final long serialVersionUID = 1L;

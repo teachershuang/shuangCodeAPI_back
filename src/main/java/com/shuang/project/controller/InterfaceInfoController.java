@@ -2,11 +2,13 @@ package com.shuang.project.controller;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.google.gson.Gson;
 import com.shuang.project.annotation.AuthCheck;
 import com.shuang.project.common.*;
 import com.shuang.project.constant.CommonConstant;
 import com.shuang.project.exception.BusinessException;
 import com.shuang.project.model.dto.interfaceinfo.InterfaceInfoAddRequest;
+import com.shuang.project.model.dto.interfaceinfo.InterfaceInfoInvokeRequest;
 import com.shuang.project.model.dto.interfaceinfo.InterfaceInfoQueryRequest;
 import com.shuang.project.model.dto.interfaceinfo.InterfaceInfoUpdateRequest;
 import com.shuang.project.model.entity.InterfaceInfo;
@@ -216,6 +218,7 @@ public class InterfaceInfoController {
         if (oldInterfaceInfo == null) {
             throw new BusinessException(ErrorCode.NOT_FOUND_ERROR);
         }
+        //TODO 固定方法名 能否改为url
         //判断接口是否可以正常调用
         com.shuang.shuangcodeclientsdk.model.User user = new com.shuang.shuangcodeclientsdk.model.User();
         user.setUserName("ohou");
@@ -261,4 +264,40 @@ public class InterfaceInfoController {
         return ResultUtils.success(result);
     }
 
+
+    /**
+     * 测试调用
+     *
+     * @param interfaceInfoInvokeRequest
+     * @param request
+     * @return
+     */
+
+    @PostMapping("/invoke")
+    public BaseResponse<String> testInterfaceInfo(@RequestBody InterfaceInfoInvokeRequest interfaceInfoInvokeRequest,
+                                                     HttpServletRequest request) {
+        if (interfaceInfoInvokeRequest == null || interfaceInfoInvokeRequest.getId() <= 0) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR);
+        }
+        Long id = interfaceInfoInvokeRequest.getId();
+        String userRequestParams = interfaceInfoInvokeRequest.getUserRequestParams();
+        //判断接口是否存在
+        InterfaceInfo oldInterfaceInfo = interfaceInfoService.getById(id);
+        if (oldInterfaceInfo == null) {
+            throw new BusinessException(ErrorCode.NOT_FOUND_ERROR);
+        }
+        if (oldInterfaceInfo.getStatus() == InterfaceInfoStatusEnum.OFFLINE.getValue()) {
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR,"借口已关闭");
+        }
+        User loginUser = userService.getLoginUser(request);
+        String accessKey = loginUser.getAccessKey();
+        String secretKey = loginUser.getSecretKey();
+        ShuangCodeClient shuangCodeClient1 = new ShuangCodeClient(accessKey, secretKey);
+        Gson gson = new Gson();
+        com.shuang.shuangcodeclientsdk.model.User userFromGson = gson.fromJson(userRequestParams, com.shuang.shuangcodeclientsdk.model.User.class);
+        String userNameUsingPost = shuangCodeClient1.getUserNameUsingPost(userFromGson);
+
+
+        return ResultUtils.success(userNameUsingPost);
+    }
 }
